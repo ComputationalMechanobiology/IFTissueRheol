@@ -36,7 +36,11 @@ function strain_ramp(t,rate)
   return( (e=rate*t, edot=rate) )
 end
 
-
+# This function produces a cycles of a certain strain amplitude and rate starting at t=0
+function strain_cycle(t,ampl,rate)
+  tm = t%(2*ampl/rate)
+  return( if t <= ampl/rate; (e=rate*t, edot=rate); else (e=-rate*t+2*ampl, edot=-rate) end;)
+end
 
 
 # function for single non-linear branch
