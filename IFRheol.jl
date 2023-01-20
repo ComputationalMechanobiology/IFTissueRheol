@@ -1,5 +1,6 @@
-using DifferentialEquations
-
+# using DifferentialEquations
+using OrdinaryDiffEq
+using Plots
 
 # create a triangular distribution of filament slack w(epsilon_s)
 # constraint of normalisation: int w = 1
@@ -39,7 +40,7 @@ end
 # This function produces a cycles of a certain strain amplitude and rate starting at t=0
 function strain_cycle(t,ampl,rate)
   tm = t%(2*ampl/rate)
-  return( if t <= ampl/rate; (e=rate*t, edot=rate); else (e=-rate*t+2*ampl, edot=-rate) end;)
+  return( if tm <= ampl/rate; (e=rate*tm, edot=rate); else (e=-rate*tm+2*ampl, edot=-rate) end;)
 end
 
 
@@ -58,7 +59,7 @@ function solve_sb(rate, amplitude, eta=30, dt=0.1)
   p = (k = 1.0, eta = eta, rate = rate, strain_function = strain_ramp, ec = get_slack_dist(0.5, 1.5))
   tspan = (0.0,amplitude/rate)
   prob = ODEProblem(f_sb,0,tspan,p,reltol=1e-8, abstol=1e-8)
-  sol = solve(prob)
+  sol = solve(prob,Tsit5())
   # calculate gradient
   e=[strain_ramp(t,rate).e for t in sol.t]
   g=[0;sol.u[2:end]-sol.u[1:end-1]] ./ [1;e[2:end]-e[1:end-1]] 
@@ -109,7 +110,7 @@ function solve_mb(rate, amplitude, eta=30, dt=0.1)
   for i in 1:length(ec.w)
     p = (k = 1.0, eta = eta, rate = rate, strain_function = strain_ramp, ec = ec.e[i])
     prob = ODEProblem(f_mb,0,tspan,p,reltol=1e-8, abstol=1e-8,saveat=dt)
-    sol = solve(prob)
+    sol = solve(prob,Tsit5())
     s += ec.w[i]*sol.u
   end
   # calculate gradient
