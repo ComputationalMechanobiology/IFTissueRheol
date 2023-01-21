@@ -39,31 +39,42 @@ end
 
 # This function produces a cycles of a certain strain amplitude and rate starting at t=0
 function strain_cycle(ampl,rate)
-  tm = t%(2*ampl/rate)
-  return( t -> if tm <= ampl/rate; (e=rate*tm, edot=rate); else (e=-rate*tm+2*ampl, edot=-rate) end;)
+  return( t -> begin; tm = t%(2*ampl/rate); if tm <= ampl/rate; (e=rate*tm, edot=rate); else (e=-rate*tm+2*ampl, edot=-rate) end; end;)
 end
 
 
 # function for single non-linear branch
 
-function f_sb(s,p,t)
+function f_sb(v,p,t)
   e, edot = p.strain_function(t)
+  s=v[1]
+  ed=v[2]
 
-  dsdt= local_stiffness(e,p.ec,p.k) * ( edot - s / p.eta ) 
-  return(dsdt) 
+  dsdt= local_stiffness(e-ed,p.ec,p.k) * ( edot - s / p.eta ) 
+  deddt = s / p.eta
+  return([dsdt,deddt]) 
 end
+
+
+# function f_sb(s,p,t)
+#   e, edot = p.strain_function(t)
+
+#   dsdt= local_stiffness(e,p.ec,p.k) * ( edot - s / p.eta ) 
+#   return(dsdt) 
+# end
 
 
 
 function solve_sb(loading, duration, eta=30, dt=0.1)
   p = (k = 1.0, eta = eta, strain_function = loading, ec = get_slack_dist(0.5, 1.5))
   tspan = (0.0,duration)
-  prob = ODEProblem(f_sb,0,tspan,p,reltol=1e-8, abstol=1e-8, saveat=dt)
+  prob = ODEProblem(f_sb,[0,0],tspan,p,reltol=1e-8, abstol=1e-8, saveat=dt)
   sol = solve(prob,Tsit5())
   # calculate gradient
   e=[loading(t).e for t in sol.t]
-  g=[0;sol.u[2:end]-sol.u[1:end-1]] ./ [1;e[2:end]-e[1:end-1]] 
-  return( (t=sol.t, e=e, s=sol.u, g=g) )
+  s=[e[1] for e in sol.u]
+  g=[0;s[2:end]-s[1:end-1]] ./ [1;e[2:end]-e[1:end-1]] 
+  return( (t=sol.t, e=e, s=s, g=g, ed=[e[2] for e in sol.u]) )
 end
 
 sol=solve_sb(0.0025,4)
