@@ -58,15 +58,6 @@ function f_sb(v,p,t)
 end
 
 
-# function f_sb(s,p,t)
-#   e, edot = p.strain_function(t)
-
-#   dsdt= local_stiffness(e,p.ec,p.k) * ( edot - s / p.eta ) 
-#   return(dsdt) 
-# end
-
-
-
 function solve_sb(loading, duration, eta=30, dt=0.1)
   p = (k = 1.0, eta = eta, strain_function = loading, ec = get_slack_dist(0.5, 1.5))
   tspan = (0.0,duration)
@@ -79,12 +70,6 @@ function solve_sb(loading, duration, eta=30, dt=0.1)
   return( (t=sol.t, e=e, s=s, g=g, ed=[e[2] for e in sol.u]) )
 end
 
-sol=solve_sb(0.0025,4)
-plot(sol.e, sol.g)
-sol=solve_sb(0.01,4)
-plot!(sol.e, sol.g)
-sol=solve_sb(0.05,4)
-plot!(sol.e, sol.g)
 
 
 
@@ -99,17 +84,6 @@ function f_mb(v,p,t)
   deddt = s / p.eta
   return( [dsdt, deddt] ) 
 end
-
-
-# function for multiple non-linear branches
-
-# function f_mb(s,p,t)
-#   e, edot = p.strain_function(t)
-
-#   # only valid if s is positive? would this work for compression?
-#   dsdt= ( if e <= p.ec; 0; else p.k end; ) * ( edot - s / p.eta ) 
-#   return(dsdt) 
-# end
 
 
 function solve_mb(loading, duration, eta=30, dt=0.1)
@@ -133,6 +107,11 @@ function solve_mb(loading, duration, eta=30, dt=0.1)
 end
 
 
+
+
+# A few lines to test the functions and plot the output
+
+
 rate = 0.001
 sol = solve_sb(strain_cycle(2,rate) ,4/rate   )
 plot(sol.e, sol.s)
@@ -169,99 +148,4 @@ sol = solve_mb(strain_cycle(2,rate) ,4/rate   )
 plot!(sol.e, sol.s)
  
 
-
-function plot_mb()
-  plot()
-  for rate in [0.001, 0.002, 0.005, 0.01, 0.02]
-    println(rate)
-    sol = solve_mb(strain_cycle(2,rate) ,4/rate   )
-    plot!(sol.e, sol.g)
-  end
-end
-
-sol = solve_mb(0.001,3)
-plot(sol.e, sol.g)
-sol = solve_mb(0.002,3)
-plot!(sol.e, sol.g)
-sol = solve_mb(0.005,3)
-plot!(sol.e, sol.g)
-sol = solve_mb(0.01,3)
-plot!(sol.e, sol.g)
-sol = solve_mb(0.02,3)
-plot!(sol.e, sol.g)
-sol = solve_mb(0.05,3)
-plot!(sol.e, sol.g)
-sol = solve_mb(0.1,3)
-plot!(sol.e, sol.g)
-       
-
-
-sol = solve_sb(0.001,3)
-plot(sol.e, sol.g)
-sol = solve_sb(0.002,3)
-plot!(sol.e, sol.g)
-sol = solve_sb(0.005,3)
-plot!(sol.e, sol.g)
-sol = solve_sb(0.01,3)
-plot!(sol.e, sol.g)
-sol = solve_sb(0.02,3)
-plot!(sol.e, sol.g)
-sol = solve_sb(0.05,3)
-plot!(sol.e, sol.g)
-sol = solve_sb(0.1,3)
-plot!(sol.e, sol.g)
-       
-
-
-using Plots
-pyplot()
-
-# sigma(t) for given tau, e0 distribution, strain rate,scale
-
-
-w[e.>0.5] = e[e.>0.5] .-0.5
-w[e.>1.0] = 1.5 .- e[e.>1.0]
-w[e.>1.5] = 0
-
-
-#
-#  This function return the modulus (gradient of strain response) for a distribution of taut deformation that is flat between e_0 and e_1.
-#  for a given strain rate, relaxation time of the maxwell unit
-#
-
-function keff_square(eps,edot,tau,e0,e1)
-  a = 1/(e1-e0)
-  ke = copy(eps)
-  for i in 1:length(eps)
-    e = eps[i]
-    if e <= e0
-      ke[i]=0
-    elseif e <= e1
-      ke[i] = a * edot * ( 1 - exp(-(e-e0)/(edot*tau)) )
-    else
-      ke[i] = a * edot * ( 1 - (exp(-(e-e0)/(edot*tau)) ) - ( 1 - exp(-(e-e1)/(edot*tau)) ) )
-    end
-  end
-  return(ke)
-end
-
-function keff_triangular(eps,edot,tau,e0,e1)
-  mid=(e0+e1)/2
-  h = 2 / (e1-e0)
-  #a = h/(mid-e0)    #   To be completed - scale so that the integral of the distribution is 1
-  ke = (h*de) .* accumulate(+,keff_square(eps,edot,tau,e0,mid) - keff_square(eps,edot,tau,mid,e1))
-  return(ke)
-end
-
-
-function rheol_triangular(eps,edot,tau,e0,e1,k0)
-  ke = keff_triangular(eps,edot,tau,e0,e1) .+ k0
-  ta = eps./edot
-  de = eps[2]-eps[1]  # assumes uniform sampling here
-  sigma = accumulate(+,ke.*de)
-  return( (t=ta, e=eps, s=sigma, grad=ke) )
-end
-
-
-# r=rheol_triangular(e,0.01,30,0.2,1.2,0.01)
 
