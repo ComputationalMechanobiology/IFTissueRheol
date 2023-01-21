@@ -2,6 +2,8 @@
 using OrdinaryDiffEq
 using Plots
 
+pyplot()
+
 # create a triangular distribution of filament slack w(epsilon_s)
 # constraint of normalisation: int w = 1
 
@@ -101,28 +103,29 @@ end
 
 # function for multiple non-linear branches
 
-function f_mb(s,p,t)
-  e, edot = p.strain_function(t)
+# function f_mb(s,p,t)
+#   e, edot = p.strain_function(t)
 
-  # only valid if s is positive? would this work for compression?
-  dsdt= ( if e <= p.ec; 0; else p.k end; ) * ( edot - s / p.eta ) 
-  return(dsdt) 
-end
+#   # only valid if s is positive? would this work for compression?
+#   dsdt= ( if e <= p.ec; 0; else p.k end; ) * ( edot - s / p.eta ) 
+#   return(dsdt) 
+# end
 
 
 function solve_mb(loading, duration, eta=30, dt=0.1)
-  tspan = (0.0,amplitude/rate)
-  ta = Array(0:dt:amplitude/rate)
+  tspan = (0.0,duration)
+  ta = Array(0:dt:duration)
   s = zeros( length(ta) )
   
-  e=[strain_ramp(t,rate).e for t in ta]
+  e=[loading(t).e for t in ta]
   ec = get_slack_dist(0.5, 1.5)
   
   for i in 1:length(ec.w)
     p = (k = 1.0, eta = eta, strain_function = loading, ec = ec.e[i])
-    prob = ODEProblem(f_mb,0,tspan,p,reltol=1e-8, abstol=1e-8,saveat=dt)
+    prob = ODEProblem(f_mb,[0,0],tspan,p,reltol=1e-8, abstol=1e-8,saveat=dt)
     sol = solve(prob,Tsit5())
-    s += ec.w[i]*sol.u
+    sb=[r[1] for r in sol.u]
+    s += ec.w[i]*sb
   end
   # calculate gradient
   g=[0;s[2:end]-s[1:end-1]] ./ [1;e[2:end]-e[1:end-1]] 
@@ -130,10 +133,49 @@ function solve_mb(loading, duration, eta=30, dt=0.1)
 end
 
 
-function plot_mb(plt)
+rate = 0.001
+sol = solve_sb(strain_cycle(2,rate) ,4/rate   )
+plot(sol.e, sol.s)
+ rate = 0.002
+sol = solve_sb(strain_cycle(2,rate) ,4/rate   )
+plot!(sol.e, sol.s)
+ rate = 0.005
+sol = solve_sb(strain_cycle(2,rate) ,4/rate   )
+plot!(sol.e, sol.s)
+ rate = 0.01
+sol = solve_sb(strain_cycle(2,rate) ,4/rate   )
+plot!(sol.e, sol.s)
+ rate = 0.02
+sol = solve_sb(strain_cycle(2,rate) ,4/rate   )
+plot!(sol.e, sol.s)
+ 
+
+
+
+rate = 0.001
+sol = solve_mb(strain_cycle(2,rate) ,4/rate   )
+plot(sol.e, sol.s)
+ rate = 0.002
+sol = solve_mb(strain_cycle(2,rate) ,4/rate   )
+plot!(sol.e, sol.s)
+ rate = 0.005
+sol = solve_mb(strain_cycle(2,rate) ,4/rate   )
+plot!(sol.e, sol.s)
+ rate = 0.01
+sol = solve_mb(strain_cycle(2,rate) ,4/rate   )
+plot!(sol.e, sol.s)
+ rate = 0.02
+sol = solve_mb(strain_cycle(2,rate) ,4/rate   )
+plot!(sol.e, sol.s)
+ 
+
+
+function plot_mb()
+  plot()
   for rate in [0.001, 0.002, 0.005, 0.01, 0.02]
-    sol = solve_mb(rate,3)
-    plot!(plt, sol.e, sol.g)
+    println(rate)
+    sol = solve_mb(strain_cycle(2,rate) ,4/rate   )
+    plot!(sol.e, sol.g)
   end
 end
 
