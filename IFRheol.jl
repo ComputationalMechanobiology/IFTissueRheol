@@ -109,8 +109,7 @@ end
 
 
 
-# A few lines to test the functions and plot the output
-
+# A few lines to test the functions and plot the output 
 
 rate = 0.001
 sol = solve_sb(strain_cycle(2,rate) ,4/rate   )
@@ -124,12 +123,10 @@ plot!(sol.e, sol.s)
  rate = 0.01
 sol = solve_sb(strain_cycle(2,rate) ,4/rate   )
 plot!(sol.e, sol.s)
- rate = 0.02
+ rate = 0.2
 sol = solve_sb(strain_cycle(2,rate) ,4/rate   )
 plot!(sol.e, sol.s)
  
-
-
 
 rate = 0.001
 sol = solve_mb(strain_cycle(2,rate) ,4/rate   )
@@ -146,6 +143,47 @@ plot!(sol.e, sol.s)
  rate = 0.02
 sol = solve_mb(strain_cycle(2,rate) ,4/rate   )
 plot!(sol.e, sol.s)
- 
 
+# A few lines to create subplots for 
+#1. single branch & 2. multiple branches
 
+rate = 0.001
+sol_sb = solve_sb(strain_cycle(2,rate), 4/rate   )
+sol_mb = solve_mb(strain_cycle(2,rate), 4/rate   )
+x1_sb, y1_sb = sol_sb.e, sol_sb.s;
+x1_mb, y1_mb = sol_mb.e, sol_mb.s;
+
+rate = 0.002
+sol_sb = solve_sb(strain_cycle(2,rate), 4/rate   )
+sol_mb = solve_mb(strain_cycle(2,rate), 4/rate   )
+x2_sb, y2_sb = sol_sb.e, sol_sb.s;
+x2_mb, y2_mb = sol_mb.e, sol_mb.s;
+
+rate = 0.005
+sol_sb = solve_sb(strain_cycle(2,rate), 4/rate   )
+sol_mb = solve_mb(strain_cycle(2,rate), 4/rate   )
+x3_sb, y3_sb = sol_sb.e, sol_sb.s;
+x3_mb, y3_mb = sol_mb.e, sol_mb.s;
+
+rate = 0.01
+sol_sb = solve_sb(strain_cycle(2,rate), 4/rate   )
+sol_mb = solve_mb(strain_cycle(2,rate), 4/rate   )
+x4_sb, y4_sb = sol_sb.e, sol_sb.s;
+x4_mb, y4_mb = sol_mb.e, sol_mb.s;
+
+rate = 0.02
+sol_sb = solve_sb(strain_cycle(2,rate), 4/rate   )
+sol_mb = solve_mb(strain_cycle(2,rate), 4/rate   )
+x5_sb, y5_sb = sol_sb.e, sol_sb.s;
+x5_mb, y5_mb = sol_mb.e, sol_mb.s;
+
+x_sb = [x1_sb, x2_sb, x3_sb, x4_sb, x5_sb]
+y_sb = [y1_sb, y2_sb, y3_sb, y4_sb, y5_sb]
+x_mb = [x1_mb, x2_mb, x3_mb, x4_mb, x5_mb]
+y_mb = [y1_mb, y2_mb, y3_mb, y4_mb, y5_mb]
+
+p1 = plot(x_sb, y_sb, title="Single branch cycle", xlabel = "Strain", ylabel="Stress")
+p2 = plot(x_mb, y_mb, title="Multiple branches cycle", xlabel = "Strain", ylabel="Stress")
+plot(p1, p2, layout=(1,2), label=["rate 0.001" "rate 0.002" "rate 0.005" "rate 0.01" "rate 0.02"], legend=:topleft)
+
+#savefig("CycleLoading.png")
