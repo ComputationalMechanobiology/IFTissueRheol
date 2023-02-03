@@ -44,6 +44,10 @@ function strain_cycle(ampl,rate)
   return( t -> begin; tm = t%(2*ampl/rate); if tm <= ampl/rate; (e=rate*tm, edot=rate); else (e=-rate*tm+2*ampl, edot=-rate) end; end;)
 end
 
+# This function produces a cycle with a pause of a certain strain amplitude and rate starting at t=0
+function strain_double_cycle(ampl,rate,pause)
+  return( t -> begin; tm = t%(2*ampl/rate + pause); if tm <= ampl/rate; (e=rate*tm, edot=rate); elseif tm > ampl/rate && tm < 2*ampl/rate; (e=-rate*tm+2*ampl, edot=-rate); else (e=0, edot=0) end; end;)
+end
 
 # function for single non-linear branch
 
@@ -69,6 +73,8 @@ function solve_sb(loading, duration, eta=30, dt=0.1)
   g=[0;s[2:end]-s[1:end-1]] ./ [1;e[2:end]-e[1:end-1]] 
   return( (t=sol.t, e=e, s=s, g=g, ed=[e[2] for e in sol.u]) )
 end
+
+
 
 
 # function for multiple non-linear branches
@@ -105,8 +111,48 @@ function solve_mb(loading, duration, eta=30, dt=0.1)
 end
 
 
-# A few lines to test the functions and create
-# subplots for single and multiple branches
+# A few lines to test the functions and plot the output 
+
+rate = 0.001
+duration = 2*(4/rate +100)
+sol = solve_sb(strain_double_cycle(2,rate,100) ,duration   )
+plot(sol.e, sol.s)
+ rate = 0.002
+ duration = 2*(4/rate +100)
+sol = solve_sb(strain_double_cycle(2,rate,100) ,duration    )
+plot!(sol.e, sol.s)
+ rate = 0.005
+ duration = 2*(4/rate +100)
+sol = solve_sb(strain_double_cycle(2,rate,100) ,duration   )
+plot!(sol.e, sol.s)
+ rate = 0.01
+ duration = 2*(4/rate +100)
+sol = solve_sb(strain_double_cycle(2,rate,100) ,duration    )
+plot!(sol.e, sol.s)
+ rate = 0.2
+ duration = 2*(4/rate +100)
+sol = solve_sb(strain_double_cycle(2,rate,100),duration   )
+plot!(sol.e, sol.s)
+ 
+
+rate = 0.001
+sol = solve_mb(strain_double_cycle(2,rate,200),4/rate   )
+plot(sol.e, sol.s)
+ rate = 0.002
+sol = solve_mb(strain_double_cycle(2,rate,200) ,4/rate   )
+plot!(sol.e, sol.s)
+ rate = 0.005
+sol = solve_mb(strain_double_cycle(2,rate,200) ,4/rate   )
+plot!(sol.e, sol.s)
+ rate = 0.01
+sol = solve_mb(strain_double_cycle(2,rate,200) ,4/rate   )
+plot!(sol.e, sol.s)
+ rate = 0.02
+sol = solve_mb(strain_double_cycle(2,rate,200) ,4/rate   )
+plot!(sol.e, sol.s)
+
+# A few lines to create subplots for 
+#1. single branch & 2. multiple branches
 
 rate = 0.001
 sol_sb = solve_sb(strain_cycle(2,rate), 4/rate   )
