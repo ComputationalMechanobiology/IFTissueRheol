@@ -45,8 +45,10 @@ function strain_cycle(ampl,rate)
 end
 
 # This function produces a cycle with a pause of a certain strain amplitude and rate starting at t=0
+# You expect two properties 1. you always hit the same value in strain exis and 2. you will have a decreasing 
+# stress in repeated cycles
 function strain_double_cycle(ampl,rate,pause)
-  return( t -> begin; tm = t%(2*ampl/rate + pause); if tm <= ampl/rate; (e=rate*tm, edot=rate); elseif tm > ampl/rate && tm < 2*ampl/rate; (e=-rate*tm+2*ampl, edot=-rate); else (e=0, edot=0) end; end;)
+  return( t -> begin; tm = t%(2*ampl/rate + pause); if tm <= (ampl/rate); (e=rate*tm, edot=rate); elseif tm > (ampl/rate) && tm <= 2*ampl/rate; (e=-rate*tm+2*ampl, edot=-rate); elseif tm > (2*ampl/rate) && tm < (2*ampl/rate + pause); (e=0, edot=0) end; end;)
 end
 
 # function for single non-linear branch
@@ -56,13 +58,15 @@ function f_sb(v,p,t)
   s=v[1]
   ed=v[2]
 
+  # To determine local stiffness they do e-ed which removes the plastic deformation
+
   dsdt= local_stiffness(e-ed,p.ec,p.k) * ( edot - s / p.eta ) 
   deddt = s / p.eta
   return([dsdt,deddt]) 
 end
 
 
-function solve_sb(loading, duration, eta=30, dt=0.1)
+function solve_sb(loading, duration, eta=100, dt=0.1)
   p = (k = 1.0, eta = eta, strain_function = loading, ec = get_slack_dist(0.5, 1.5))
   tspan = (0.0,duration)
   prob = ODEProblem(f_sb,[0,0],tspan,p,reltol=1e-8, abstol=1e-8, saveat=dt)
@@ -73,8 +77,6 @@ function solve_sb(loading, duration, eta=30, dt=0.1)
   g=[0;s[2:end]-s[1:end-1]] ./ [1;e[2:end]-e[1:end-1]] 
   return( (t=sol.t, e=e, s=s, g=g, ed=[e[2] for e in sol.u]) )
 end
-
-
 
 
 # function for multiple non-linear branches
@@ -90,7 +92,7 @@ function f_mb(v,p,t)
 end
 
 
-function solve_mb(loading, duration, eta=30, dt=0.1)
+function solve_mb(loading, duration, eta=100, dt=0.1)
   tspan = (0.0,duration)
   ta = Array(0:dt:duration)
   s = zeros( length(ta) )
@@ -114,73 +116,83 @@ end
 # A few lines to test the functions and plot the output 
 
 rate = 0.001
-duration = 2*(4/rate +100)
-sol = solve_sb(strain_double_cycle(2,rate,100) ,duration   )
-plot(sol.e, sol.s)
+duration = 2*(4/rate +0)
+sol = solve_sb(strain_double_cycle(2,rate,0) ,duration   )
+plot(sol.e, sol.s, legend=:topleft)
  rate = 0.002
- duration = 2*(4/rate +100)
-sol = solve_sb(strain_double_cycle(2,rate,100) ,duration    )
-plot!(sol.e, sol.s)
+ duration = 2*(4/rate +0)
+sol = solve_sb(strain_double_cycle(2,rate,0) ,duration    )
+plot!(sol.e, sol.s, legend=:topleft)
  rate = 0.005
- duration = 2*(4/rate +100)
-sol = solve_sb(strain_double_cycle(2,rate,100) ,duration   )
+ duration = 2*(4/rate +0)
+sol = solve_sb(strain_double_cycle(2,rate,0) ,duration   )
 plot!(sol.e, sol.s)
  rate = 0.01
- duration = 2*(4/rate +100)
-sol = solve_sb(strain_double_cycle(2,rate,100) ,duration    )
+ duration = 2*(4/rate +0)
+sol = solve_sb(strain_double_cycle(2,rate,0) ,duration    )
 plot!(sol.e, sol.s)
- rate = 0.2
- duration = 2*(4/rate +100)
-sol = solve_sb(strain_double_cycle(2,rate,100),duration   )
+ rate = 0.02
+ duration = 2*(4/rate +0)
+sol = solve_sb(strain_double_cycle(2,rate,0),duration   )
 plot!(sol.e, sol.s)
  
 
 rate = 0.001
-sol = solve_mb(strain_double_cycle(2,rate,200),4/rate   )
+duration = 2*(4/rate +0)
+sol = solve_mb(strain_double_cycle(2,rate,0),duration   )
 plot(sol.e, sol.s)
  rate = 0.002
-sol = solve_mb(strain_double_cycle(2,rate,200) ,4/rate   )
+ duration = 2*(4/rate +0)
+sol = solve_mb(strain_double_cycle(2,rate,0) ,duration  )
 plot!(sol.e, sol.s)
  rate = 0.005
-sol = solve_mb(strain_double_cycle(2,rate,200) ,4/rate   )
+ duration = 2*(4/rate +0)
+sol = solve_mb(strain_double_cycle(2,rate,0) ,duration   )
 plot!(sol.e, sol.s)
  rate = 0.01
-sol = solve_mb(strain_double_cycle(2,rate,200) ,4/rate   )
+ duration = 2*(4/rate +0)
+sol = solve_mb(strain_double_cycle(2,rate,0) ,duration   )
 plot!(sol.e, sol.s)
  rate = 0.02
-sol = solve_mb(strain_double_cycle(2,rate,200) ,4/rate   )
+ duration = 2*(4/rate +0)
+sol = solve_mb(strain_double_cycle(2,rate,0) ,duration   )
 plot!(sol.e, sol.s)
 
 # A few lines to create subplots for 
 #1. single branch & 2. multiple branches
 
 rate = 0.001
-sol_sb = solve_sb(strain_cycle(2,rate), 4/rate   )
-sol_mb = solve_mb(strain_cycle(2,rate), 4/rate   )
+duration = 2*(4/rate +0)
+sol_sb = solve_sb(strain_double_cycle(2,rate,0), duration   )
+sol_mb = solve_mb(strain_double_cycle(2,rate,0), duration   )
 x1_sb, y1_sb = sol_sb.e, sol_sb.s;
 x1_mb, y1_mb = sol_mb.e, sol_mb.s;
 
 rate = 0.002
-sol_sb = solve_sb(strain_cycle(2,rate), 4/rate   )
-sol_mb = solve_mb(strain_cycle(2,rate), 4/rate   )
+duration = 2*(4/rate +0)
+sol_sb = solve_sb(strain_double_cycle(2,rate,0), duration   )
+sol_mb = solve_mb(strain_double_cycle(2,rate,0), duration   )
 x2_sb, y2_sb = sol_sb.e, sol_sb.s;
 x2_mb, y2_mb = sol_mb.e, sol_mb.s;
 
 rate = 0.005
-sol_sb = solve_sb(strain_cycle(2,rate), 4/rate   )
-sol_mb = solve_mb(strain_cycle(2,rate), 4/rate   )
+duration = 2*(4/rate +0)
+sol_sb = solve_sb(strain_cycle(2,rate), duration   )
+sol_mb = solve_mb(strain_double_cycle(2,rate,0), duration   )
 x3_sb, y3_sb = sol_sb.e, sol_sb.s;
 x3_mb, y3_mb = sol_mb.e, sol_mb.s;
 
 rate = 0.01
-sol_sb = solve_sb(strain_cycle(2,rate), 4/rate   )
-sol_mb = solve_mb(strain_cycle(2,rate), 4/rate   )
+duration = 2*(4/rate +0)
+sol_sb = solve_sb(strain_cycle(2,rate), duration   )
+sol_mb = solve_mb(strain_double_cycle(2,rate,0), duration   )
 x4_sb, y4_sb = sol_sb.e, sol_sb.s;
 x4_mb, y4_mb = sol_mb.e, sol_mb.s;
 
 rate = 0.02
-sol_sb = solve_sb(strain_cycle(2,rate), 4/rate   )
-sol_mb = solve_mb(strain_cycle(2,rate), 4/rate   )
+duration = 2*(4/rate +0)
+sol_sb = solve_sb(strain_cycle(2,rate), duration   )
+sol_mb = solve_mb(strain_double_cycle(2,rate,0), duration   )
 x5_sb, y5_sb = sol_sb.e, sol_sb.s;
 x5_mb, y5_mb = sol_mb.e, sol_mb.s;
 
@@ -193,4 +205,4 @@ p1 = plot(x_sb, y_sb, title="Single branch cycle", xlabel = "Strain", ylabel="St
 p2 = plot(x_mb, y_mb, title="Multiple branches cycle", xlabel = "Strain", ylabel="Stress")
 plot(p1, p2, layout=(1,2), label=["rate 0.001" "rate 0.002" "rate 0.005" "rate 0.01" "rate 0.02"], legend=:topleft)
 
-#savefig("CycleLoading.png")
+savefig("eta100.png")

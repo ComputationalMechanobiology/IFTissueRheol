@@ -147,4 +147,4 @@ p1 = plot(x_sb, y_sb, title="Single branch cycle", xlabel = "Strain", ylabel="St
 p2 = plot(x_mb, y_mb, title="Multiple branches cycle", xlabel = "Strain", ylabel="Stress")
 plot(p1, p2, layout=(1,2), label=["rate 0.001" "rate 0.002" "rate 0.005" "rate 0.01" "rate 0.02"], legend=:topleft)
 
-#savefig("CycleLoading.png")
+savefig("CycleLoading.png")
