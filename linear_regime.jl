@@ -6,9 +6,13 @@ using Plots
 ###################################### Fit experimental data to Fractional Solid ##############################################
 ###############################################################################################################################
 
-data = importcsv("C:/Users/eleni/OneDrive/Documents/MRes_Sensor_CDT/Mini_Project/cycling/22-03-01_m4/cyclingm4300.csv", t_col=1, ϵ_col=6, σ_col=3)
 
-fract_solid = modelfit(data, FractSolid, strain_imposed)
+
+data = importcsv("C:/Users/eleni/OneDrive/Documents/MRes_Sensor_CDT/Mini_Project/cycling/22-03-01_m4/single_cycle.csv", t_col=7, ϵ_col=6, σ_col=9)
+
+println(data.t)
+
+fract_solid = modelfit(data, FractSolid, strain_imposed, verbose=true)
 fractsolid_predict = modelpredict(extract(data, strain_only), fract_solid)
 
 pygui(true)
