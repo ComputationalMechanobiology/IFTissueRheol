@@ -12,7 +12,7 @@ data = importcsv("C:/Users/eleni/OneDrive/Documents/MRes_Sensor_CDT/Mini_Project
 
 println(data.t)
 
-fract_solid = modelfit(data, FractSolid, strain_imposed, verbose=true)
+fract_solid = modelfit(data, FractSolid, strain_imposed, lo=(η = 0.0001, cᵦ = 0.0001, β = 0.0001, k = 0.0001), hi=(η = 10000, cᵦ = 10000, β = 10000, k = 10000), verbose=true)
 fractsolid_predict = modelpredict(extract(data, strain_only), fract_solid)
 
 pygui(true)
