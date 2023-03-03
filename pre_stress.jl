@@ -3,10 +3,10 @@ using Images, FileIO
 using DelimitedFiles
 using Plots
 using PyCall, Conda
-pyplot()
+#pyplot()
 
-#Conda.add("opencv")
-pyimport("cv2")
+#Conda.add("opencv") #install opencv from conda
+cv2 = pyimport("cv2") #import the cv2 module from conda and define as cv2
 
 function calculate_centroid(image_process)
     # convert image to grayscale image
@@ -27,7 +27,6 @@ function calculate_centroid(image_process)
 end
 
 function calculate_displacement(folder_path, folder_calibration)
-    
     print("Calculate centroid BEFORE... \n")
     path_before = string(folder_path, "/before.tif")
     img_before = cv2.imread(path_before);
